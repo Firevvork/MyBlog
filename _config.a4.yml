@@ -2,21 +2,25 @@ menu:
   首页: /  #需要hexo new page index,在index/index.md填写的内容将会展现在首页上
   文章: /list/ # 需要hexo new page list
   # 添加其他页面格式举例：
-  # 关于: /about/ # 需要hexo new page about
+  作品: /exhibition
+  留言: /message
+  关于: /about/ # 需要hexo new page about
+  Now: /now/
   # 标签: /tags/ #需要hexo new page tags
   # 分类: /categories/ # 需要hexo new page categories
   # ...
 
 showInMenu:  # menu 中的哪些页面显示在首页中（“首页”必定显示）
   - 文章  # 将在首页显示 文章 链接
-  # - 关于
+  - 关于
+  - Now
   # - 标签
   # - 分类
 
 
 index:  # 首页的页眉页脚
   header: 看过大海的人不会忘记海的广阔 
-  footer: Email:123456789@gmail.com # 除了可以填写任何文字外，可以自动邮箱链接化，但需按照这个格式填写：Email:xxx@gmail.com
+  footer: Email:m17326762232@gmail.com # 除了可以填写任何文字外，可以自动邮箱链接化，但需按照这个格式填写：Email:xxx@gmail.com
   titlePosition: left # center | left  # 首页标题的位置
 
 footerLink: # 底部的链接自定义
