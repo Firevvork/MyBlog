@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0,  viewport-fit=cover" name="viewport" />
+    <meta name="description" content="开发｜相似图片搜索的原理" />
+    <meta name="hexo-theme-A4" content="v1.7.0" />
+    <link rel="alternate icon" type="image/webp" href="/img/favicon.webp">
+    <title>Firevvork | 欢迎👏</title>
+
+    
+        
+            
+<link rel="stylesheet" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/reset.css">
+
+            
+<link rel="stylesheet" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/markdown.css">
+
+            
+<link rel="stylesheet" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/fonts.css">
+ 
+            <!--注意：首页既不是post也不是page-->
+            
+        
+    
+    
+<link rel="stylesheet" href="/css/ui.css">
+ 
+    
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+    
+    <body>
+        <div class="paper">
+            
+            
+            
+            
+                <div class="shadow-drop-2-bottom paper-main">
+                    
+<div class="header">
+    <div class="header-container">
+        <img style="
+        width: 56px;
+        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/img/favicon.webp" width="10%"></img>
+        <div class="header-content">
+            <a class="logo" href="/">Firevvork</a> 
+            <span class="description">全栈开发｜勤修戒定慧</span> 
+        </div>
+        
+    </div>
+    
+   
+    <ul class="nav">
+        
+            
+                <li><a href="/">首页</a></li>
+            
+        
+            
+                <li><a href="/list/">文章</a></li>
+            
+        
+            
+                <li><a href="/exhibition">作品</a></li>
+            
+        
+            
+                <li><a href="/message">留言</a></li>
+            
+        
+            
+                <li><a href="/about/">关于</a></li>
+            
+        
+            
+                <li><a href="/now/">Now</a></li>
+            
+        
+    </ul>
+</div> 
+        
+                    
+                    
+
+                    
+                    
+                    
+                    <!--说明是文章post页面-->
+                    
+                        <div class="post-main">
+
+    
+        <div class="post-main-title">
+            开发｜相似图片搜索的原理
+        </div>
+      
+    
+
+    <div class="post-md">
+        
+            
+        
+        <blockquote>
+<p><font color="gray">非常好奇，Google Lens（born in 2011）这类search by image应用背后的<strong>原理</strong>。<br>去Google搜了一圈，没有搜到靠谱的解答，也许是我的搜索姿势不对？</p>
+<p>在中午互联网看到了阮一峰老大哥的解答(wrote in 2011)，真猛呐！～有空一定要好好学习阮大哥的其他博文（尤其是早年的）</font>  </p>
+</blockquote>
+<p>先来看一个实例：  </p>
+<ul>
+<li><p>input:  <a target="_blank" rel="noopener" href="https://www.ruanyifeng.com/blogimg/asset/201107/bg2011072103.jpg"><img src="https://www.ruanyifeng.com/blogimg/asset/201107/bg2011072103.jpg" width=15% height=15% style="display:block;margin:0 auto;"></a></p>
+</li>
+<li><p>output: <a target="_blank" rel="noopener" href="https://www.ruanyifeng.com/blogimg/asset/201107/bg2011072104.jpg"><img src="https://www.ruanyifeng.com/blogimg/asset/201107/bg2011072104.jpg" width=40% height=40% style="display:block;margin:0 auto"></a></p>
+</li>
+</ul>
+<p>我们用一张图片作为输入，计算机（搜索引擎）则接受输入，输出多张与输入图片<strong>相似的</strong>图片作为输出。  </p>
+<p>先考虑最简单情形的处理（输入-输出 高度相似、无杂质干扰的情形）：  </p>
+<p>我们使用<strong>感知哈希算法（Percetual hash algorithm）</strong>，它的核心步骤是：  </p>
+<ol>
+<li>每张图片生成一个<strong>指纹(fingerprint)</strong><font color=gray>「实际上是个字符串」</font></li>
+<li>比较不同图片的指纹，指纹越相近，就说明图片越相似。</li>
+</ol>
+<hr>
+<p>具体实现：</p>
+<p><strong>第一步，去细留粗（缩小尺寸）</strong> </p>
+<p>将图片缩小到8px*8px的尺寸。这一步的目的是去除图片的细节，只保留结构、明暗等基本信息，摒弃不同图片间尺寸差异。</p>
+<p><strong>第二步，简化色彩</strong></p>
+<p>将缩小后的图片色彩，转为64级灰度。也就是说，所有像素点的色彩种类上限，为64种。</p>
+<p><strong>第三步，计算灰度平均值</strong></p>
+<p>计算所有像素（当前共64个像素）的灰度平均值。</p>
+<p><strong>第四步，比较像素的灰度</strong></p>
+<p>将每个像素的灰度，与图片整体的灰度平均值进行比较。若该像素的灰度大于或等于灰度平均值，记为1；反之则记为0.</p>
+<p><strong>第五步，计算哈希值</strong></p>
+<p>将上一步的比较结果，组合在一起，我们得到了一个64位的整数字符串，此即该图片的指纹。（需保证所有图片都采用相同的顺序组合像素点比较结果）</p>
+<hr>
+<p>得到图片指纹后，就可以对比不同的图片，看看64位中有多少位是不一样的。在理论上，这等同于计算<strong>汉明距离（Hamming distance）</strong>。若不相同的数据位不超过5，就说明两张图片很相似（相似度超过了95.3%）。</p>
+<p>以上算法的优点是简单快速，缺点则是对图片局部称合度要求非常高。如果在图片上加几个文字，或将图片翻转，该算法的效能将大大下降。因此，该算法的最佳用途是根据略缩图，找出原图。</p>
+<p>实际应用中，我们往往采用更强大的<strong>pHash算法</strong>和<strong>SIFT算法</strong>，它们能够识别图片的变形，只要变形幅度不超过25%，就能匹配原图。这些算法虽然更复杂，但是原理与我们刚刚所构建的简便算法是一致的，即先将图片转化为Hash字符串，然后再进行比较。</p>
+<p>延伸了解：<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Otsu%27s_method">Otsu’s method</a></p>
+<font color=gray>
+后记：
+
+<p>其实无论搜索的是图片还是文本或是视频……</p>
+<p>原理都是将要搜的东西提取出特征值，然后按照特征值比较相似度，最后再按相似度排序将结果呈献给用户。</p>
+<p>所以本质上来说，搜索，需要解决两个问题，一个是如何取得特征值，一个是如何计算相似度。<br></font></p>
+
+    </div>
+
+    <div class="post-meta">
+        <i>
+        
+            <span>2023-07-12</span>
+            
+                <span>该篇文章被 烟花不堪剪</span>
+            
+            
+                <span>打上标签:
+                    
+                    
+                        <a href='/tags/%E7%AE%97%E6%B3%95/'>
+                            算法
+                        </a>
+                    
+                </span>
+             
+             
+        
+        </i>
+    </div>
+    
+        
+
+     
+</div>
+
+
+
+                    
+                    
+                    <div class="footer">
+    
+        <span> 
+            © 1949-2023 China 
+
+            
+                
+
+            
+        </span>
+    
+</div>
+<!--这是指一条线往下的内容-->
+<div class="footer-last">
+    
+            <span>🌊生命不息，折腾不止🌊</span>
+            
+                <span class="footer-last-span-right"><i>本站由<a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/index.html">Hexo</a>驱动｜使用<a target="_blank" rel="noopener" href="https://github.com/HiNinoJay/hexo-theme-A4">Hexo-theme-A4</a>主题</i></span>
+            
+    
+</div>
+
+
+    
+        
+<link rel="stylesheet" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/a11y-dark.min.css">
+
+        
+<script src="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/js/highlight.min.js"></script>
+
+        
+<script src="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/js/highlightjs-line-numbers.js"></script>
+
+    
+
+
+<script>
+    hljs.initHighlightingOnLoad();
+    hljs.initLineNumbersOnLoad();
+</script>
+                </div>
+            
+    </body>
+</html>
